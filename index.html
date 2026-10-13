@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Beat Simpel</title>
+    <style>
+        body { margin: 0; background: #050510; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: height; height: 100vh; overflow: hidden; }
+        #gameCanvas { background: #080818; border: 2px solid #00ffff; box-shadow: 0 0 20px rgba(0,255,255,0.4); }
+        .ui { position: absolute; text-align: center; }
+        button { background: #00ffff; color: #000; border: none; padding: 15px 30px; font-weight: bold; font-size: 1.2rem; border-radius: 25px; cursor: pointer; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="menu" class="ui">
+        <h1>NEON NINJA BEAT</h1>
+        <p>Ketuk Kiri / Kanan saat bola melewati garis!</p>
+        <button onclick="startGame()">MAIN SEKARANG</button>
+    </div>
+
+    <div id="hud" class="ui" style="top: 20px; display: none; font-size: 1.2rem; font-weight: bold;">
+        SKOR: <span id="score">0</span> | NYAWA: <span id="hp">100</span>
+    </div>
+
+    <canvas id="gameCanvas" width="360" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let score = 0, hp = 100, isPlaying = false, notes = [];
+
+function startGame() {
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("hud").style.display = "block";
+    score = 0; hp = 100; notes = [];
+    isPlaying = true;
+    loop();
+}
+
+setInterval(() => {
+    if (!isPlaying) return;
+    let lane = Math.random() < 0.5 ? 0 : 1; 
+    notes.push({ lane: lane, y: 0, active: true });
+}, 1000);
+
+canvas.addEventListener("pointerdown", (e) => {
+    if (!isPlaying) return;
+    let rect = canvas.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let clickedLane = x < 180 ? 0 : 1;
+
+    let hit = false;
+    for (let n of notes) {
+        if (n.active && n.lane === clickedLane && n.y > 450 && n.y < 550) {
+            n.active = false;
+            score += 100;
+            hit = true;
+            break;
+        }
+    }
+    if (!hit) {
+        hp -= 10; 
+    }
+    document.getElementById("score").textContent = score;
+    document.getElementById("hp").textContent = hp;
+});
+
+function loop() {
+    if (!isPlaying) return;
+
+    ctx.clearRect(0, 0, 360, 600);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(180, 0); ctx.lineTo(180, 600);
+    ctx.moveTo(0, 500); ctx.lineTo(360, 500); 
+    ctx.stroke();
+
+    for (let i = notes.length - 1; i >= 0; i--) {
+        let n = notes[i];
+        if (!n.active) { notes.splice(i, 1); continue; }
+
+        n.y += 4; 
+        let nx = n.lane === 0 ? 90 : 270;
+
+        ctx.fillStyle = n.lane === 0 ? "#00ffff" : "#ff00ff";
+        ctx.beginPath();
+        ctx.arc(nx, n.y, 25, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (n.y > 600) {
+            n.active = false;
+            hp -= 15;
+            document.getElementById("hp").textContent = hp;
+        }
+    }
+
+    if (hp <= 0) {
+        isPlaying = false;
+        alert("Game Over! Skor kamu: " + score);
+        document.getElementById("menu").style.display = "block";
+        document.getElementById("hud").style.display = "none";
+    }
+
+    if (isPlaying) requestAnimationFrame(loop);
+}
+</script>
+
+</body>
+</html>
